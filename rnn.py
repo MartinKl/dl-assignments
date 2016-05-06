@@ -14,6 +14,7 @@ from fuel.schemes import SequentialScheme
 from fuel.transformers import Flatten
 from fuel.datasets.hdf5 import H5PYDataset
 from fuel.datasets import Dataset
+from fuel.transformers import Mapping
 
 from theano.tensor import tensor3
 
@@ -27,6 +28,13 @@ o_dim = in_dim
 REC_NON_LIN = Rectifier
 init_weights = IsotropicGaussian(.01)
 init_biases = Constant(0)
+
+
+class Transformer(object):
+
+    @staticmethod
+    def transpose_stream(data):
+        return (data[0].swapaxes(0,1), data[1].swapaxes(0,1))
 
 
 if __name__ == '__main__':
@@ -56,6 +64,8 @@ if __name__ == '__main__':
     data_set = H5PYDataset('training_data.hdf5', ('train',), load_in_memory=True)
     data_stream = DataStream.default_stream(data_set, iteration_scheme=SequentialScheme(data_set.num_examples,
                                                                                         batch_size=batch_size))
+
+    data_stream = Mapping(data_stream, Transformer.transpose_stream)
 
     algorithm = GradientDescent(cost=cost, parameters=cg.parameters, step_rule=Scale(learning_rate=0.1))
     test_set = H5PYDataset('training_data.hdf5', ('test',), load_in_memory=True)

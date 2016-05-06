@@ -48,8 +48,8 @@ for seq in cut_seqs:
 x_tensor = array(data)
 y_vec = array(targets)
 
-x_tensor = x_tensor.swapaxes(0, 1)
-y_vec = y_vec.swapaxes(0, 1)
+# x_tensor = x_tensor.swapaxes(0, 1)
+# y_vec = y_vec.swapaxes(0, 1)
 
 print(x_tensor.ndim, x_tensor.shape, y_vec.ndim, y_vec.shape)
 
