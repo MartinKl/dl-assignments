@@ -18,6 +18,8 @@ from fuel.transformers import Mapping
 
 from theano.tensor import tensor3
 
+from data import Transformer
+
 # network parameters
 max_epochs = 3
 batch_size = 1
@@ -30,11 +32,7 @@ init_weights = IsotropicGaussian(.01)
 init_biases = Constant(0)
 
 
-class Transformer(object):
 
-    @staticmethod
-    def transpose_stream(data):
-        return (data[0].swapaxes(0,1), data[1].swapaxes(0,1))
 
 
 if __name__ == '__main__':

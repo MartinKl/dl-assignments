@@ -3,6 +3,12 @@ from numpy import array, unique, eye, vstack, where
 import re, sys, h5py
 from fuel.datasets.hdf5 import H5PYDataset
 
+class Transformer(object):
+
+    @staticmethod
+    def transpose_stream(data):
+        return (data[0].swapaxes(0,1), data[1].swapaxes(0,1))
+
 # params
 
 MIN_SEQ_LENGTH = 100

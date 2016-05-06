@@ -3,7 +3,7 @@ from blocks.filter import VariableFilter
 
 from theano import function
 
-from rnn import Transformer
+from data import Transformer
 
 f = open('model.bin', 'rb')
 main_loop = load(f)
