@@ -5,7 +5,7 @@
 # 
 # ## imports
 
-# In[ ]:
+# In[2]:
 
 from h5py import File
 
@@ -15,7 +15,7 @@ import json
 
 from scipy.misc import imshow
 
-from numpy import array, where, take
+from numpy import array, where, take, vstack, hstack
 
 from random import randint
 
@@ -27,7 +27,7 @@ get_ipython().magic('matplotlib inline')
 
 # ## constants
 
-# In[ ]:
+# In[3]:
 
 IMAGE_DATA_H5PY_FILE = './data/cocotalk.h5'
 IMG_DIR = './data/'
@@ -43,7 +43,7 @@ B = .144
 
 # ## load and build model
 
-# In[ ]:
+# In[4]:
 
 imdl = ImagenetModel(MATLAB_MODEL_FILE)
 
@@ -58,14 +58,17 @@ the_func = function(inputs=[x], outputs=[x_], allow_input_downcast=True)
 # ## sample
 # ### load
 
-# In[ ]:
+# In[10]:
 
 images_file = File(IMAGE_DATA_H5PY_FILE, 'r')
 images = images_file['/images/']
 label_length = images_file['/label_length/']
+labels = images_file['/labels/']
+labels_start = images_file['/label_start_ix/']
+labels_end = images_file['/label_end_ix/']
 
 
-# In[ ]:
+# In[110]:
 
 with open(JSON_COCOTALK) as f:
     js = json.loads(f.read())
@@ -92,7 +95,7 @@ with open(JSON_COCO_RAW) as f:
 
 # ### compute labels
 
-# In[ ]:
+# In[149]:
 
 def get_label(word_probs, entry_id, sep=' '):
     p_vals = word_probs[0].flatten()
@@ -105,18 +108,49 @@ def get_label(word_probs, entry_id, sep=' '):
     return sep.join(label_candidates)
 
 
-# In[ ]:
+# In[133]:
 
 entry_id = randint(0, images.shape[0]-1)
 result = the_func([images[entry_id]])
 
 
-# In[ ]:
+# In[157]:
 
 label = get_label(result, image_id)
 
 print(label, '\ntrue labels:', captions[entry_id])
 imshow(images[entry_id])
+
+
+# # assignment 5
+# ## create training data
+# 
+# We need to compute the 1000D-network output for each image. This output has to be set as input of the decoder k times, where k is the number of captions that exist for that particular image. E. g.:
+# 
+# image_0 has 5 captions.
+# 
+# 1. compute x = f(image_0)
+# 2. align them:
+# 
+# $decode\bigg(\begin{bmatrix}x\\x\\x\\x\\x\end{bmatrix}\bigg) = \begin{bmatrix}repr(caption_1)\\repr(caption_2)\\repr(caption_3)\\repr(caption_4)\\repr(caption_5)\end{bmatrix}$ 
+
+# In[ ]:
+
+def get_repr(word_seq)
+
+dec_x_rows = [] 
+dec_y_rows = []
+TRAINING_LIMIT = 2
+for i in range(images.shape[0]):
+    if (i == TRAINING_LIMIT): break
+    a_1000_d = f([imgages[i]])
+    for j in range(labels_start[i], labels_end[i])
+        dec_x_rows.append(a_1000_d)
+        dec_y_rows.append(labels[j])
+
+dec_x = vstack(dec_x_rows)
+dec_y = vstack(dec_y_rows)
+print(dec_x.shape, dec_y.shape)
 
 
 # ### close
