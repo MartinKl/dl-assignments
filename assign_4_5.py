@@ -68,7 +68,7 @@ labels_start = images_file['/label_start_ix/']
 labels_end = images_file['/label_end_ix/']
 
 
-# In[110]:
+# In[11]:
 
 with open(JSON_COCOTALK) as f:
     js = json.loads(f.read())
@@ -88,14 +88,14 @@ with open(JSON_COCO_RAW) as f:
 
 # ### inspect the data or network
 
-# In[ ]:
+# In[25]:
 
-
+captions[0]
 
 
 # ### compute labels
 
-# In[149]:
+# In[12]:
 
 def get_label(word_probs, entry_id, sep=' '):
     p_vals = word_probs[0].flatten()
@@ -108,15 +108,15 @@ def get_label(word_probs, entry_id, sep=' '):
     return sep.join(label_candidates)
 
 
-# In[133]:
+# In[13]:
 
 entry_id = randint(0, images.shape[0]-1)
 result = the_func([images[entry_id]])
 
 
-# In[157]:
+# In[15]:
 
-label = get_label(result, image_id)
+label = get_label(result, entry_id)
 
 print(label, '\ntrue labels:', captions[entry_id])
 imshow(images[entry_id])
@@ -134,23 +134,76 @@ imshow(images[entry_id])
 # 
 # $decode\bigg(\begin{bmatrix}x\\x\\x\\x\\x\end{bmatrix}\bigg) = \begin{bmatrix}repr(caption_1)\\repr(caption_2)\\repr(caption_3)\\repr(caption_4)\\repr(caption_5)\end{bmatrix}$ 
 
-# In[ ]:
-
-def get_repr(word_seq)
+# In[23]:
 
 dec_x_rows = [] 
 dec_y_rows = []
-TRAINING_LIMIT = 2
+TRAINING_LIMIT = 1
 for i in range(images.shape[0]):
     if (i == TRAINING_LIMIT): break
-    a_1000_d = f([imgages[i]])
-    for j in range(labels_start[i], labels_end[i])
+    a_1000_d = the_func([images[i]])[0]
+    for j in range(labels_start[i], labels_end[i]+1):
         dec_x_rows.append(a_1000_d)
         dec_y_rows.append(labels[j])
 
 dec_x = vstack(dec_x_rows)
 dec_y = vstack(dec_y_rows)
 print(dec_x.shape, dec_y.shape)
+
+
+# ## Building the decoder
+
+# In[ ]:
+
+class MySimpleRecurrent(BaseRecurrent, Initializable):
+    @lazy(allocation=['dim'])
+    def __init__(self, dim, activation, **kwargs):
+        self.dim = dim
+        children = [activation]
+        kwargs.setdefault('children', []).extend(children)
+        super(MySimpleRecurrent, self).__init__(**kwargs)
+
+    @property
+    def W(self):
+        return self.parameters[0]
+
+    def get_dim(self, name):
+        if name == 'mask':
+            return 0
+        if name in (MySimpleRecurrent.apply.sequences +
+                    MySimpleRecurrent.apply.states):
+            return self.dim
+        return super(MySimpleRecurrent, self).get_dim(name)
+
+    def _allocate(self):
+        self.parameters.append(shared_floatx_nans((self.dim, self.dim), name="W"))
+        add_role(self.parameters[0], WEIGHT)
+
+        # NB no parameters for initial state
+
+    def _initialize(self):
+        self.weights_init.initialize(self.W, self.rng)
+
+    @recurrent(sequences=['inputs', 'mask'], states=['states'],
+               outputs=['states'], contexts=['context'])
+    def apply(self, inputs, states, mask=None, **kwargs):
+        next_states = inputs + tensor.dot(states, self.W)
+        next_states = self.children[0].apply(next_states)
+        if mask:
+            next_states = (mask[:, None] * next_states +
+                           (1 - mask[:, None]) * states)
+        return next_states
+
+    @application(contexts=["context"])
+    def initial_states(self, batch_size, *args, **kwargs):
+        init = kwargs["context"]
+        return init.T
+
+    @initial_states.property('outputs')
+    def initial_states_outputs(self):
+        return self.apply.states
+
+    
 
 
 # ### close
